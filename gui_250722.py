@@ -10,7 +10,7 @@ from PyQt5.QtGui import QFontDatabase, QFont, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 # OCR & Excel 모듈
-from gpt_receipt_ocr_250721 import process_receipts
+from gemini_receipt_ocr_250722 import process_receipts
 from excel_writer_250722 import generate_excel
 
 # ===== 경로 설정 =====
