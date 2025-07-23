@@ -43,10 +43,30 @@ class ProcessThread(QThread):
         self.image_files = image_files
         self.save_folder = save_folder
 
+    def get_unique_path(self, path):
+        """파일 경로 중복 시 _01, _02 추가"""
+        base, ext = os.path.splitext(path)
+        counter = 1
+        new_path = path
+        while os.path.exists(new_path):
+            new_path = f"{base}_{counter:02d}{ext}"
+            counter += 1
+        return new_path
+
+    def get_unique_folder(self, folder_path):
+        """폴더 경로 중복 시 _01, _02 추가"""
+        counter = 1
+        new_folder = folder_path
+        while os.path.exists(new_folder):
+            new_folder = f"{folder_path}_{counter:02d}"
+            counter += 1
+        return new_folder
+
     def run(self):
         try:
-            output_text_folder = os.path.join(self.save_folder, "텍스트결과")
-            output_excel = os.path.join(self.save_folder, "교통비_결과.xlsx")
+            # ✅ 저장 경로 중복 처리
+            output_text_folder = self.get_unique_folder(os.path.join(self.save_folder, "텍스트결과"))
+            output_excel = self.get_unique_path(os.path.join(self.save_folder, "교통비_결과.xlsx"))
 
             # ✅ API Key 유형에 따라 OCR 모듈 선택
             if self.api_key.startswith("sk-"):  # OpenAI 키
