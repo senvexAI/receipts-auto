@@ -1,0 +1,50 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+
+# ---- IDE / Editor metadata ----
+.vscode/
+.idea/
+
+# ---- Packaging / Build artefacts ----
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Wheel / egg
+*.egg-info/
+.eggs/
+
+# ---- Logs & databases ----
+*.log
+
+# ---- OS generated files ----
+.DS_Store
+Thumbs.db 
+
+# ---- Test / Coverage ----
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ---- Temporary files ----
+*.tmp
+*.temp
+
+# ---- PyInstaller additional artefacts ----
+*.exe
+*.dll
+*.pyd
+
+# ---- Program output ----
+# Ignore generated result files except template under reciept_format
+*.xlsx
+!reciept_format/** 
