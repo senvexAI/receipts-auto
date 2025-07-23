@@ -2,6 +2,7 @@ import sys
 import os
 import webbrowser
 import subprocess
+import importlib
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QComboBox, QFileDialog,
     QVBoxLayout, QHBoxLayout, QProgressBar, QSizePolicy, QInputDialog, QMessageBox
@@ -9,8 +10,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFontDatabase, QFont, QPixmap
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
-# OCR & Excel 모듈
-from gemini_receipt_ocr_250722 import process_receipts
+# Excel 모듈
 from excel_writer_250722 import generate_excel
 
 # ===== 경로 설정 =====
@@ -43,12 +43,45 @@ class ProcessThread(QThread):
         self.image_files = image_files
         self.save_folder = save_folder
 
+    def get_unique_path(self, path):
+        """파일 경로 중복 시 _01, _02 추가"""
+        base, ext = os.path.splitext(path)
+        counter = 1
+        new_path = path
+        while os.path.exists(new_path):
+            new_path = f"{base}_{counter:02d}{ext}"
+            counter += 1
+        return new_path
+
+    def get_unique_folder(self, folder_path):
+        """폴더 경로 중복 시 _01, _02 추가"""
+        counter = 1
+        new_folder = folder_path
+        while os.path.exists(new_folder):
+            new_folder = f"{folder_path}_{counter:02d}"
+            counter += 1
+        return new_folder
+
     def run(self):
         try:
-            output_text_folder = os.path.join(self.save_folder, "텍스트결과")
-            output_excel = os.path.join(self.save_folder, "교통비_결과.xlsx")
+            # ✅ 저장 경로 중복 처리
+            output_text_folder = self.get_unique_folder(os.path.join(self.save_folder, "텍스트결과"))
+            output_excel = self.get_unique_path(os.path.join(self.save_folder, "교통비_결과.xlsx"))
 
-            # ✅ API Key + 직원명 리스트 전달
+            # ✅ API Key 유형에 따라 OCR 모듈 선택
+            if self.api_key.startswith("sk-"):  # OpenAI 키
+                ocr_module = importlib.import_module("gpt_receipt_ocr_250721")
+            elif self.api_key.startswith("AIza"):  # Gemini 키
+                ocr_module = importlib.import_module("gemini_receipt_ocr_250722")
+            else:
+                # 잘못된 API Key는 신호를 보냄
+                self.finished.emit(0, "invalid_key")
+                return
+
+            # ✅ process_receipts 함수 가져오기
+            process_receipts = getattr(ocr_module, "process_receipts")
+
+            # ✅ OCR 실행
             total = process_receipts(
                 self.api_key,
                 self.image_files,
@@ -57,6 +90,7 @@ class ProcessThread(QThread):
                 progress_callback=lambda val: self.progress.emit(val)
             )
 
+            # ✅ Excel 생성
             generate_excel(
                 output_text_folder,
                 TEMPLATE_PATH,
@@ -65,6 +99,7 @@ class ProcessThread(QThread):
             )
 
             self.finished.emit(total, output_excel)
+
         except Exception as e:
             print("오류 발생:", e)
             self.finished.emit(0, "")
@@ -317,7 +352,7 @@ class ReceiptApp(QWidget):
             return
 
         # ✅ API Key 입력
-        api_key, ok = QInputDialog.getText(self, "API Key 입력", "OpenAI API Key를 입력하세요:")
+        api_key, ok = QInputDialog.getText(self, "API Key 입력", "OpenAI(또는 Gemini) API Key를 입력하세요:")
         if not ok or not api_key.strip():
             QMessageBox.warning(self, "알림", "API Key가 필요합니다.")
             return
@@ -362,6 +397,11 @@ class ReceiptApp(QWidget):
                     print("폴더 열기에 실패했습니다.")
 
     def show_finish_screen(self, total, result_excel_path):
+        if result_excel_path == "invalid_key":
+            QMessageBox.warning(self, "알림", "API Key가 인식되지 않았습니다.\nOpenAI는 'sk-', Gemini는 'AIza'로 시작합니다.")
+            self.reset_ui()
+            return
+
         self.progress_msg.setText(f"총 {total}개 처리완료!")
         self.progress_bar.setValue(100)
         self.percent_label.setText("100%")
