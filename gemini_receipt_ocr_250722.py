@@ -7,7 +7,7 @@ import base64
 from datetime import datetime
 from collections import defaultdict
 
-# client = genai.Client(api_key="AIzaSyCvoifyvGiq17O4a7cqr7RSiyZEdyp-VCc")
+
 
 
 def extract_front_info_gemini(api_key, image_path: str) -> str:
