@@ -72,7 +72,7 @@ class ProcessThread(QThread):
             if self.api_key.startswith("sk-"):  # OpenAI 키
                 ocr_module = importlib.import_module("gpt_receipt_ocr_250721")
             elif self.api_key.startswith("AIza"):  # Gemini 키
-                ocr_module = importlib.import_module("gemini_receipt_ocr_250722")
+                ocr_module = importlib.import_module("gemini_epc_demo-multi-gui")
             else:
                 # 잘못된 API Key는 신호를 보냄
                 self.finished.emit(0, "invalid_key")
@@ -86,7 +86,6 @@ class ProcessThread(QThread):
                 self.api_key,
                 self.image_files,
                 output_text_folder,
-                EMPLOYEE_NAMES,
                 progress_callback=lambda val: self.progress.emit(val)
             )
 
